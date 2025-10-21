@@ -1,0 +1,28 @@
+program main;
+
+{$APPTYPE CONSOLE}
+
+{$R *.res}
+
+uses
+  Horse,
+  Horse.Jhonson,
+  Horse.HandleException,
+  System.SysUtils,
+  DBConnection in 'Utils\DBConnection.pas',
+  BaseConnetion in 'DAO\BaseConnetion.pas' {FormBaseConnetion: TDataModule};
+
+begin
+  THorse
+    .Use(Jhonson)
+    .Use(HandleException);
+
+  var LServiceDataModel := TFormBaseConnetion.Create(nil);
+
+     THorse.Listen(9000,
+  procedure
+  begin
+    Writeln('Server is running on port '+THorse.Port.ToString);
+  end);
+
+end.

@@ -1,0 +1,105 @@
+unit FunctionsRotas;
+
+interface
+
+uses
+  System.SysUtils, System.Classes, System.JSON, Data.DB, DataSet.Serialize, System.Generics.Collections, FireDAC.Comp.Client;
+
+procedure Pagination(const AQuery: TFDQuery; const AQueryParams: TDictionary<string, string>);
+procedure Ordenacao(const AQuery: TFDQuery; const AQueryParams: TDictionary<string, string>);
+procedure AplicaFiltros(const AQuery: TFDQuery; const AQueryParams: TDictionary<string, string>);
+
+implementation
+
+procedure Pagination(const AQuery: TFDQuery; const AQueryParams: TDictionary<string, string>);
+begin
+  if AQueryParams.ContainsKey('limit') then
+    begin
+      AQuery.FetchOptions.RecsMax   := StrToIntDef(AQueryParams.Items['limit'], 10);
+      AQuery.FetchOptions.RowsetSize := AQuery.FetchOptions.RecsMax;
+    end;
+
+  if AQueryParams.ContainsKey('offset') then
+      AQuery.FetchOptions.RecsSkip := StrToIntDef(AQueryParams.Items['offset'], 0)
+end;
+
+procedure Ordenacao(const AQuery: TFDQuery; const AQueryParams: TDictionary<string, string>);
+begin
+  if not AQueryParams.ContainsKey('sort') then
+    exit;
+
+  var LSQLOrdenacao : string;
+
+  var LOrdenacaoes := AQueryParams.Items['sort'].Split([';']);
+  for var LOrdenacao in LOrdenacaoes do
+    begin
+      var LDadosOrdenacao := LOrdenacao.Split([',']);
+      var LFildName := LDadosOrdenacao[0];
+      if Assigned(AQuery.Fields.FindField(LFildName)) then
+        begin
+
+          if not LSQLOrdenacao.trim.IsEmpty then
+            LSQLOrdenacao := LSQLOrdenacao + ' , ';
+
+          LSQLOrdenacao := LSQLOrdenacao + LFildName;
+
+          if Length(LDadosOrdenacao) = 2 then
+            begin
+              var LTipoOrdenacao := LDadosOrdenacao[1].Trim.ToLower;
+              if LTipoOrdenacao.Equals('asc') or LTipoOrdenacao.Equals('desc') then
+                LSQLOrdenacao := LSQLOrdenacao + ' ' + LTipoOrdenacao;
+            end;
+        end;
+
+    end;
+  if not LSQLOrdenacao.Trim.IsEmpty then
+    AQuery.SQL.Add('order by ' + LSQLOrdenacao);
+
+end;
+
+procedure AplicaFiltros(const AQuery: TFDQuery; const AQueryParams: TDictionary<string, string>);
+var
+  Key, Value, ParamName: string;
+  Field: TField;
+begin
+  if AQueryParams.ToString.IsEmpty then
+    exit;
+
+  for Key in AQueryParams.Keys do
+  begin
+    Field := AQuery.FindField(Key);
+    if not Assigned(Field) then
+      Continue;
+
+    Value := AQueryParams.Items[Key];
+    ParamName := 'P_' + Key;
+
+    // Adiciona o filtro conforme o tipo do campo
+    case Field.DataType of
+      ftString, ftWideString, ftMemo, ftWideMemo:
+        AQuery.SQL.Add(Format('AND %s LIKE :%s', [Key, ParamName]));
+      ftInteger, ftSmallint, ftWord, ftLargeint, ftAutoInc:
+        AQuery.SQL.Add(Format('AND %s = :%s', [Key, ParamName]));
+      ftFloat, ftCurrency, ftBCD, ftFMTBcd:
+        AQuery.SQL.Add(Format('AND %s = :%s', [Key, ParamName]));
+      ftDate, ftDateTime, ftTimeStamp:
+        AQuery.SQL.Add(Format('AND %s = :%s', [Key, ParamName]));
+    else
+      Continue; // ignora tipos não suportados
+    end;
+  end;
+
+  // Define o valor do parâmetro conforme o tipo
+    case Field.DataType of
+      ftString, ftWideString, ftMemo, ftWideMemo:
+        AQuery.ParamByName(ParamName).AsString := '%' + Value + '%';
+      ftInteger, ftSmallint, ftWord, ftLargeint, ftAutoInc:
+        AQuery.ParamByName(ParamName).AsInteger := StrToIntDef(Value, 0);
+      ftFloat, ftCurrency, ftBCD, ftFMTBcd:
+        AQuery.ParamByName(ParamName).AsFloat := StrToFloatDef(Value, 0);
+      ftDate, ftDateTime, ftTimeStamp:
+        AQuery.ParamByName(ParamName).AsDateTime := StrToDateDef(Value, 0);
+    end;
+end;
+
+end.

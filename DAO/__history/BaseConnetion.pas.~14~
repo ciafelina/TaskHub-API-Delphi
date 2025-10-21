@@ -1,0 +1,198 @@
+unit BaseConnetion;
+
+interface
+
+uses
+  System.SysUtils, System.Classes, FireDAC.Stan.Intf, FireDAC.Stan.Option,
+  FireDAC.Stan.Error, FireDAC.UI.Intf, FireDAC.Phys.Intf, FireDAC.Stan.Def,
+  FireDAC.Stan.Pool, FireDAC.Stan.Async, FireDAC.Phys, FireDAC.ConsoleUI.Wait,
+  Data.DB, FireDAC.Comp.Client, DBConnection, FireDAC.VCLUI.Wait,
+  FireDAC.Phys.MSSQL, FireDAC.Phys.MSSQLDef, FireDAC.Phys.ODBCBase,
+  FireDAC.Stan.Param, FireDAC.DatS, FireDAC.DApt.Intf, FireDAC.DApt,
+  FireDAC.Comp.DataSet;
+
+type
+  TFormBaseConnetion = class(TDataModule)
+    Base: TFDConnection;
+    MSSQLDriverLink: TFDPhysMSSQLDriverLink;
+    QryRecordCountUsuarios: TFDQuery;
+    QryCadastroUsuarios: TFDQuery;
+    QryPesquisaUsuarios: TFDQuery;
+    QryRecordCountUsuariosContador: TIntegerField;
+    QryUsuario: TFDQuery;
+    QryUsuarioid: TFDAutoIncField;
+    QryUsuarionome: TStringField;
+    QryUsuarioemail: TStringField;
+    QryUsuarioSenha_hash: TStringField;
+    QryUsuarioStatus: TStringField;
+    QryCadastroUsuariosid: TFDAutoIncField;
+    QryCadastroUsuariosnome: TStringField;
+    QryCadastroUsuariosemail: TStringField;
+    QryCadastroUsuariossenha_hash: TStringField;
+    QryCadastroUsuariosStatus: TStringField;
+    QryCadastroUsuarioscriado_em: TSQLTimeStampField;
+    QryPesquisaUsuariosid: TFDAutoIncField;
+    QryPesquisaUsuariosnome: TStringField;
+    QryPesquisaUsuariosemail: TStringField;
+    QryPesquisaUsuariossenha_hash: TStringField;
+    QryPesquisaUsuarioscriado_em: TSQLTimeStampField;
+    QryPesquisaUsuariosStatus: TStringField;
+    QryRecordCountTarefas: TFDQuery;
+    QryCadastroTarefas: TFDQuery;
+    QryPesquisaTarefas: TFDQuery;
+    QryPesquisaTarefasid: TFDAutoIncField;
+    QryPesquisaTarefastitulo: TStringField;
+    QryPesquisaTarefasdescricao: TStringField;
+    QryPesquisaTarefasStatusTarefa: TStringField;
+    QryPesquisaTarefasusuario_id: TIntegerField;
+    QryPesquisaTarefasnome: TStringField;
+    QryPesquisaTarefasemail: TStringField;
+    QryPesquisaTarefasStatusUsuario: TStringField;
+    QryPesquisaTarefascriado_em: TSQLTimeStampField;
+    QryPesquisaTarefasatualizado_em: TSQLTimeStampField;
+    QryRecordCountTarefasContador: TIntegerField;
+    QryCadastroTarefastitulo: TStringField;
+    QryCadastroTarefasdescricao: TStringField;
+    QryCadastroTarefasstatus: TStringField;
+    QryCadastroTarefasusuario_id: TIntegerField;
+    QryCadastroTarefascriado_em: TSQLTimeStampField;
+    QryCadastroTarefasatualizado_em: TSQLTimeStampField;
+    procedure QryCadastroUsuariosBeforePost(DataSet: TDataSet);
+    procedure QryCadastroTarefasAfterInsert(DataSet: TDataSet);
+    procedure QryCadastroTarefasAfterEdit(DataSet: TDataSet);
+  private
+    { Private declarations }
+  public
+    { Public declarations }
+    constructor Create(AOwner: TComponent); override;
+    destructor Destroy; override;
+    function ValidateUser( const AEmail, AName, APassoword: string ): Boolean;
+    function GetAccessToken: string;
+    function GetRefreshToken: string;
+    function GetByIdUsuarios(const AId: Integer): TDataSet;
+    function ValidateUserID(const Id : string): Boolean;
+
+  end;
+
+var
+  FormBaseConnetion: TFormBaseConnetion;
+
+const PRIVATE_KEY = 'senha123';
+
+implementation
+
+uses
+  BCrypt, JOSE.Core.JWT, JOSE.Core.Builder, System.DateUtils;
+
+{$R *.dfm}
+
+{ TFormBaseConnetion }
+
+constructor TFormBaseConnetion.Create(AOwner: TComponent);
+begin
+ inherited Create(AOwner); // Always call the inherited first in the constructor
+
+ try
+    ConfigurarConexaoPeloINI(Base);
+    Base.Connected := True;
+  except
+    on E: Exception do
+    begin
+      raise Exception.Create('Falha ao conectar ao banco de dados: ' + E.Message);
+    end;
+  end;
+end;
+
+destructor TFormBaseConnetion.Destroy;
+begin
+  if (Base <> nil) and Base.Connected then
+    Base.Connected := False;
+  inherited;
+end;
+
+function TFormBaseConnetion.GetAccessToken: string;
+begin
+  var LJWT := TJWT.Create;
+  try
+    LJWT.Claims.IssuedAt := Now;
+    LJWT.Claims.Expiration := IncHour(Now);
+    LJWT.Claims.Issuer := 'Minha API de Treino';
+    LJWT.Claims.Subject := QryUsuario.FieldByName('id').AsString;
+    LJWT.Claims.SetClaimOfType<string>('nome',QryUsuario.FieldByName('nome').AsString);
+    LJWT.Claims.SetClaimOfType<string>('Status',QryUsuario.FieldByName('Status').AsString);
+    Result := TJOSE.SHA256CompactToken(PRIVATE_KEY,LJWT);
+  finally
+    LJWT.Free;
+  end;
+end;
+
+function TFormBaseConnetion.GetByIdUsuarios(const AId: Integer): TDataSet;
+begin
+  QryUsuario.SQL.Add(' and id = :Id');
+  QryUsuario.ParamByName('Id').Value := AId;
+  QryUsuario.Open();
+  Result := QryUsuario;
+end;
+
+function TFormBaseConnetion.GetRefreshToken: string;
+begin
+    var LJWT := TJWT.Create;
+  try
+    LJWT.Claims.IssuedAt := Now;
+    LJWT.Claims.Expiration := IncMonth(Now);
+    LJWT.Claims.Issuer := 'Minha API de Treino';
+    LJWT.Claims.Subject := QryUsuario.FieldByName('id').AsString;
+    Result := TJOSE.SHA256CompactToken(PRIVATE_KEY,LJWT);
+  finally
+    LJWT.Free;
+  end;
+end;
+
+procedure TFormBaseConnetion.QryCadastroTarefasAfterEdit(DataSet: TDataSet);
+begin
+  QryCadastroTarefasatualizado_em.AsDateTime := Now;
+end;
+
+procedure TFormBaseConnetion.QryCadastroTarefasAfterInsert(DataSet: TDataSet);
+begin
+  QryCadastroTarefascriado_em.AsDateTime := Now;
+  QryCadastroTarefasstatus.AsString      := 'PENDENTE'; 
+end;
+
+procedure TFormBaseConnetion.QryCadastroUsuariosBeforePost(DataSet: TDataSet);
+begin
+  QryCadastroUsuarios .FieldByName('nome').AsString := UpperCase(QryCadastroUsuariosnome.AsString);
+
+  if QryCadastroUsuarios.State = dsInsert then
+  begin
+    if QryCadastroUsuarios.FieldByName('senha_hash').AsString <> '' then
+        QryCadastroUsuarios.FieldByName('senha_hash').AsString := TBCrypt.GenerateHash(QryCadastroUsuarios.FieldByName('senha_hash').AsString);
+  end
+  else if QryCadastroUsuarios.State = dsEdit then
+  begin
+    if (not QryCadastroUsuariossenha_hash.AsString.IsEmpty) and ( not TBCrypt.CompareHash( QryCadastroUsuarios.FieldByName('senha_hash').AsString , QryCadastroUsuariossenha_hash.OldValue) ) then
+      QryCadastroUsuarios.FieldByName('senha_hash').AsString := TBCrypt.GenerateHash(QryCadastroUsuarios.FieldByName('senha_hash').AsString)
+    else
+      QryCadastroUsuarios.FieldByName('senha_hash').AsString := QryCadastroUsuariossenha_hash.OldValue;
+  end;
+end;
+
+function TFormBaseConnetion.ValidateUser(const AEmail, AName, APassoword: string): Boolean;
+begin
+  QryUsuario.SQL.Add(' and email = '''+AEmail+''' and nome = '''+AName+'''');
+  QryUsuario.Open();
+  if QryUsuario.IsEmpty then
+    Exit(false);
+  Result := TBCrypt.CompareHash(APassoword, QryUsuario.FieldByName('Senha_hash').AsString)
+end;
+
+function TFormBaseConnetion.ValidateUserID(const Id: string): Boolean;
+begin
+  QryUsuario.SQL.Add(' and id = '+Id+'');
+  QryUsuario.Open();
+  if QryUsuario.IsEmpty then
+    Exit(false);
+  Result := true
+end;
+
+end.

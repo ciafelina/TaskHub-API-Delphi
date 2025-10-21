@@ -1,0 +1,5 @@
+object FormBaseConnetion: TFormBaseConnetion
+  Height = 207
+  Width = 402
+  PixelsPerInch = 96
+end

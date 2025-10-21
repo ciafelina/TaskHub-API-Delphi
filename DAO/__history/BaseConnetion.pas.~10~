@@ -1,0 +1,96 @@
+unit BaseConnetion;
+
+interface
+
+uses
+  System.SysUtils, System.Classes, FireDAC.Stan.Intf, FireDAC.Stan.Option,
+  FireDAC.Stan.Error, FireDAC.UI.Intf, FireDAC.Phys.Intf, FireDAC.Stan.Def,
+  FireDAC.Stan.Pool, FireDAC.Stan.Async, FireDAC.Phys, FireDAC.ConsoleUI.Wait,
+  Data.DB, FireDAC.Comp.Client, DBConnection, FireDAC.VCLUI.Wait,
+  FireDAC.Phys.MSSQL, FireDAC.Phys.MSSQLDef, FireDAC.Phys.ODBCBase,
+  FireDAC.Stan.Param, FireDAC.DatS, FireDAC.DApt.Intf, FireDAC.DApt,
+  FireDAC.Comp.DataSet;
+
+type
+  TFormBaseConnetion = class(TDataModule)
+    Base: TFDConnection;
+    MSSQLDriverLink: TFDPhysMSSQLDriverLink;
+    QryRecordCount: TFDQuery;
+    QryCadastro: TFDQuery;
+    QryPesquisa: TFDQuery;
+    QryPesquisaid: TFDAutoIncField;
+    QryPesquisanome: TStringField;
+    QryPesquisaemail: TStringField;
+    QryPesquisasenha_hash: TStringField;
+    QryPesquisacriado_em: TSQLTimeStampField;
+    QryCadastroid: TFDAutoIncField;
+    QryCadastronome: TStringField;
+    QryCadastroemail: TStringField;
+    QryCadastrosenha_hash: TStringField;
+    QryCadastrocriado_em: TSQLTimeStampField;
+    QryRecordCountContador: TIntegerField;
+    procedure QryCadastroBeforePost(DataSet: TDataSet);
+  private
+    { Private declarations }
+  public
+    { Public declarations }
+    constructor Create(AOwner: TComponent); override;
+    destructor Destroy; override;
+  end;
+
+var
+  FormBaseConnetion: TFormBaseConnetion;
+
+implementation
+
+uses
+  BCrypt;
+
+{$R *.dfm}
+
+{ TFormBaseConnetion }
+
+constructor TFormBaseConnetion.Create(AOwner: TComponent);
+begin
+ inherited Create(AOwner); // Sempre chame o inherited primeiro no construtor
+
+ try
+    ConfigurarConexaoPeloINI(Base);
+    Base.Connected := True;
+  except
+    on E: Exception do
+    begin
+      raise Exception.Create('Falha ao conectar ao banco de dados: ' + E.Message);
+    end;
+  end;
+end;
+
+destructor TFormBaseConnetion.Destroy;
+begin
+  if (Base <> nil) and Base.Connected then
+    Base.Connected := False;
+  inherited;
+
+end;
+
+procedure TFormBaseConnetion.QryCadastroBeforePost(DataSet: TDataSet);
+begin
+  QryCadastro.FieldByName('nome').AsString := UpperCase(QryCadastronome.AsString);
+
+  if QryCadastro.State = dsInsert then
+  begin
+    if QryCadastro.FieldByName('senha_hash').AsString <> '' then
+        QryCadastro.FieldByName('senha_hash').AsString := TBCrypt.GenerateHash(QryCadastro.FieldByName('senha_hash').AsString);
+  end
+  else if QryCadastro.State = dsEdit then
+  begin
+    if (not QryCadastrosenha_hash.AsString.IsEmpty) and ( not TBCrypt.CompareHash( QryCadastro.FieldByName('senha_hash').AsString , QryCadastrosenha_hash.OldValue) ) then
+      QryCadastro.FieldByName('senha_hash').AsString := TBCrypt.GenerateHash(QryCadastro.FieldByName('senha_hash').AsString)
+    else
+      QryCadastro.FieldByName('senha_hash').AsString := QryCadastrosenha_hash.OldValue;
+
+  end;
+
+end;
+
+end.

@@ -1,0 +1,10 @@
+object FormBaseConnetion: TFormBaseConnetion
+  Height = 207
+  Width = 402
+  PixelsPerInch = 96
+  object Base: TFDConnection
+    LoginPrompt = False
+    Left = 288
+    Top = 24
+  end
+end

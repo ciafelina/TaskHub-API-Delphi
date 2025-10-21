@@ -1,0 +1,116 @@
+unit TarefasController;
+
+interface
+
+procedure RegistryRotas;
+
+implementation
+
+uses horse, Horse.JWT, System.JSON, System.SysUtils, DataSet.Serialize, TarefasFunctions, BaseConnetion, JOSE.Core.JWT, JOSE.Core.Builder;
+
+procedure DoListAll(Req: THorseRequest; Res: THorseResponse);
+begin
+  var LIdUser  := Req.Session<TJSONObject>.GetValue<string>('sub');
+  var LService := TFormBaseConnetion.Create(nil);
+  var LTasksFunctions  := TCrudTarefas.Create(LService);
+  try
+    if not LService.ValidateUserID(LIdUser) then
+      raise EHorseException.New.Status(THTTPStatus.Unauthorized).Error('User not Unauthorized');
+
+    var LSONObject := TJSONObject.Create;
+    LSONObject.AddPair('Tarefas', LTasksFunctions.ListAll(Req.Query.Dictionary).ToJSONArray());
+    LSONObject.AddPair('Records',LTasksFunctions.RecordCount);
+    Res.Send<TJSONObject>(LSONObject);
+  finally
+    LTasksFunctions.Free;
+    LService.Free;
+  end;
+end;
+
+procedure DoLisGetById(Req: THorseRequest; Res: THorseResponse);
+begin
+
+end;
+
+procedure DoAppend(Req: THorseRequest; Res: THorseResponse);
+var
+  Ltitle, LDescription, LUserId : string;
+begin
+  var LIdUser  := Req.Session<TJSONObject>.GetValue<string>('sub');
+  var LService := TFormBaseConnetion.Create(nil);
+  var LTasksFunctions  := TCrudTarefas.Create(LService);
+ try
+    if not LService.ValidateUserID(LIdUser) then
+        raise EHorseException.New.Status(THTTPStatus.Unauthorized).Error('User not Unauthorized');
+
+    if not Req.Body<TJSONObject>.TryGetValue<string>('titulo',Ltitle) or Ltitle.Trim.IsEmpty then
+      raise EHorseException.New.Status(THTTPStatus.BadRequest).Error('enter your title');
+
+    if not Req.Body<TJSONObject>.TryGetValue<string>('descricao',LDescription) or LDescription.Trim.IsEmpty then
+      raise EHorseException.New.Status(THTTPStatus.BadRequest).Error('enter your Description');
+
+    if not Req.Body<TJSONObject>.TryGetValue<string>('usuario_id',LUserId) or LUserId.Trim.IsEmpty then
+      raise EHorseException.New.Status(THTTPStatus.BadRequest).Error('enter your User Id');
+
+    if LTasksFunctions.GetByIduser(StrToInt(LUserId)).IsEmpty then
+      raise EHorseException.New.Status(THTTPStatus.BadRequest).Error('User is not registered or not Unauthorized');
+
+    if LTasksFunctions.Append(Req.Body<TJSONObject>) then
+      Res.Status(THTTPStatus.Created).Send<TJSONObject>(LService.QryCadastroTarefas.ToJSONObject());
+  finally
+    LService.Free;
+    LTasksFunctions.Free;
+  end;
+
+end;
+
+procedure DoUpdate(Req: THorseRequest; Res: THorseResponse);
+begin
+  var LIdUser  := Req.Session<TJSONObject>.GetValue<string>('sub');
+  var LService := TFormBaseConnetion.Create(nil);
+  var LTasksFunctions   := TCrudTarefas.Create(LService);
+  try
+    if not LService.ValidateUserID(LIdUser) then
+      raise EHorseException.New.Status(THTTPStatus.Unauthorized).Error('User not Unauthorized');
+    if LTasksFunctions.GetById(Req.Params['id'].ToInt64).IsEmpty then
+      raise EHorseException.New.Status(THTTPStatus.NotFound).Error('Taks is not registered');
+    if LTasksFunctions.Update(req.Body<TJSONObject>) then
+      Res.Status(THTTPStatus.NoContent)
+
+  finally
+    LService.Free;
+    LTasksFunctions.Free;
+  end;
+end;
+
+procedure DoDelete(Req: THorseRequest; Res: THorseResponse);
+begin
+  var LIdUser  := Req.Session<TJSONObject>.GetValue<string>('sub');
+  var LService := TFormBaseConnetion.Create(nil);
+  var LTasksFunctions   := TCrudTarefas.Create(LService);
+  try
+    if not LService.ValidateUserID(LIdUser) then
+      raise EHorseException.New.Status(THTTPStatus.Unauthorized).Error('User not Unauthorized');
+
+    if LTasksFunctions.GetById(Req.Params['id'].ToInt64).IsEmpty then
+      raise EHorseException.New.Status(THTTPStatus.NotFound).Error('Taks is not registered');
+
+    if LTasksFunctions.Delete then
+      Res.Status(THTTPStatus.NoContent)
+
+  finally
+    LService.Free;
+    LTasksFunctions.Free;
+  end;
+end;
+
+procedure RegistryRotas;
+begin
+   THorse.Get('/Tarefas', DoListAll);
+   THorse.Get('/Tarefas/:Id',DoLisGetById);
+   THorse.Post('/Tarefas',DoAppend);
+   THorse.Put('/Tarefas/:Id',DoUpdate);
+   THorse.Delete('/Tarefas/:Id',DoDelete);
+end;
+
+end.

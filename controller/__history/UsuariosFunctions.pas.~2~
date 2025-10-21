@@ -1,0 +1,75 @@
+unit UsuariosFunctions;
+
+interface
+
+uses
+  System.SysUtils, System.Classes, System.JSON, Data.DB, BaseConnetion, DataSet.Serialize, 
+  System.Generics.Collections, FireDAC.Comp.Client, FunctionsRotas;
+type
+  TCrudUsuarios = class
+  private
+    FDataModule: TFormBaseConnetion;
+  public
+    constructor Create(ADataModule: TFormBaseConnetion);
+    function ListAll( const AQueryParams: TDictionary<string, string>  ): TDataSet;
+    function Append(const AValue: TJSONObject): Boolean;
+    function Update(const AValue: TJSONObject): Boolean;
+    function Delete: Boolean;
+    function GetById(const AId: Integer): TDataSet;
+    function RecordCount: Int64;
+  end;
+
+implementation
+
+{ TCrudUsuarios }
+
+function TCrudUsuarios.Append(const AValue: TJSONObject): Boolean;
+begin
+  FDataModule.QryCadastro.SQL.Add('where id is null');
+  FDataModule.QryCadastro.Open;
+  FDataModule.QryCadastro.LoadFromJSON(AValue, false);
+  Result := True;
+end;
+
+constructor TCrudUsuarios.Create(ADataModule: TFormBaseConnetion);
+begin
+  FDataModule := ADataModule;
+end;
+
+function TCrudUsuarios.Delete: Boolean;
+begin
+  FDataModule.QryCadastro.Delete;
+  Result := True;
+end;
+
+function TCrudUsuarios.GetById(const AId: Integer): TDataSet;
+begin
+  FDataModule.QryCadastro.SQL.Add(' Where id = :Id');
+  FDataModule.QryCadastro.ParamByName('Id').Value := AId;
+  FDataModule.QryCadastro.Open;
+  Result := FDataModule.QryCadastro;
+end;
+
+function TCrudUsuarios.ListAll( const AQueryParams: TDictionary<string, string>): TDataSet;
+begin
+  Pagination(FDataModule.QryPesquisa, AQueryParams);
+  Ordenacao(FDataModule.QryPesquisa, AQueryParams);
+  AplicaFiltros(FDataModule.QryPesquisa, AQueryParams);
+
+  FDataModule.QryPesquisa.Open;
+  Result := FDataModule.QryPesquisa;
+end;
+
+function TCrudUsuarios.RecordCount: Int64;
+begin
+  FDataModule.QryRecordCount.Open();
+  Result := FDataModule.QryRecordCountContador.AsInteger;
+end;
+
+function TCrudUsuarios.Update(const AValue: TJSONObject): Boolean;
+begin
+  FDataModule.QryCadastro.MergeFromJSONObject(AValue, false);
+  Result := True;
+end;
+
+end.

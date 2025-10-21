@@ -1,0 +1,59 @@
+unit LoginController;
+
+interface
+
+procedure RegistryRotas;
+
+implementation
+
+uses horse, System.JSON, System.SysUtils, BaseConnetion;
+
+procedure DoLogin(Req: THorseRequest; Res: THorseResponse);
+var
+  LEmail, LName, LPassword: string;
+begin
+  if not Req.Body<TJSONObject>.TryGetValue<string>('email',LEmail) or LEmail.Trim.IsEmpty then
+    raise EHorseException.New.Status(THTTPStatus.BadRequest).Error('enter your e-mail!!');
+  if not Req.Body<TJSONObject>.TryGetValue<string>('name',LName) or LName.Trim.IsEmpty then
+    raise EHorseException.New.Status(THTTPStatus.BadRequest).Error('enter your name!!');
+  if not Req.Body<TJSONObject>.TryGetValue<string>('password',LPassword) or LPassword.Trim.IsEmpty then
+    raise EHorseException.New.Status(THTTPStatus.BadRequest).Error('enter your password!!');
+
+  var LSeriveUser := TFormBaseConnetion.Create(nil);
+  try
+    if not LSeriveUser.ValidateUser(LEmail, LName, LPassword) then
+      raise EHorseException.New.Status(THTTPStatus.Unauthorized).Error('user does not exist or is not authorized, check the information.');
+    var LToken := TJSONObject.Create;
+    LToken.AddPair('accessToken', LSeriveUser.GetAccessToken);
+    LToken.AddPair('refreshToken', LSeriveUser.GetRefreshToken);
+    Res.Send<TJSONObject>(LToken);
+  finally
+    LSeriveUser.Free;
+  end;
+
+end;
+
+procedure DoRefreshToken(Req: THorseRequest; Res: THorseResponse);
+begin
+  var LIdUser  := Req.Session<TJSONObject>.GetValue<string>('sub');
+  var LSeriveUser := TFormBaseConnetion.Create(nil);
+  try
+    if not LSeriveUser.GetByIdUsuarios(LIdUser.ToInt64) then
+      raise EHorseException.New.Status(THTTPStatus.Unauthorized).Error('Unauthorized user');
+    var LToken := TJSONObject.Create;
+    LToken.AddPair('accessToken', LSeriveUser.GetAccessToken);
+    LToken.AddPair('refreshToken', LSeriveUser.GetRefreshToken);
+    Res.Send<TJSONObject>(LToken);
+  finally
+    LSeriveUser.Free;
+  end;
+end;
+
+
+procedure RegistryRotas;
+begin
+   THorse.Post('/Login',DoLogin);
+   THorse.Get('/refrash-token',DoRefreshToken);
+end;
+
+end.

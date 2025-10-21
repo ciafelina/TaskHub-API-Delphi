@@ -1,0 +1,18 @@
+unit LoginController;
+
+interface
+
+implementation
+
+uses horse, System.JSON, System.SysUtils, DataSet.Serialize, UsuariosFunctions, BaseConnetion;
+
+procedure RegistryRotas;
+begin
+   THorse.Get('/Usuarios',DoListAll);
+   THorse.Get('/Usuarios/:Id',DoLisGetById);
+   THorse.Post('/Usuarios',DoAppend);
+   THorse.Put('/Usuarios/:Id',DoUpdate);
+   THorse.Delete('/Usuarios/:Id',DoDelete);
+end;
+
+end.

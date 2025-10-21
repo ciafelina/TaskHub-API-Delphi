@@ -1,0 +1,20 @@
+unit LoginController;
+
+interface
+
+implementation
+
+uses horse, System.JSON, System.SysUtils, DataSet.Serialize, UsuariosFunctions, BaseConnetion;
+
+
+procedure DoLogin(Req: THorseResponse; Res: THorseResponse);
+begin
+
+end;
+
+procedure RegistryRotas;
+begin
+   THorse.Post('/Login',DoLogin);
+end;
+
+end.

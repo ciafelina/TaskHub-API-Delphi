@@ -1,0 +1,60 @@
+unit TarefasController;
+
+interface
+
+procedure RegistryRotas;
+
+implementation
+
+uses horse, Horse.JWT, System.JSON, System.SysUtils, DataSet.Serialize, UsuariosFunctions, BaseConnetion, JOSE.Core.JWT, JOSE.Core.Builder;
+
+procedure DoListAll(Req: THorseRequest; Res: THorseResponse);
+begin
+  var LIdUser  := Req.Session<TJSONObject>.GetValue<string>('sub');
+  var LServiceUsuarios := TFormBaseConnetion.Create(nil);
+  var LTasksFunctions  := TCrudTarefas.Create(LServiceUsuarios);
+  try
+    if not LServiceUsuarios.ValidateUserID(LIdUser) then
+      raise EHorseException.New.Status(THTTPStatus.Unauthorized).Error('User not Unauthorized');
+
+    var LSONObject := TJSONObject.Create;
+    LSONObject.AddPair('Tarefas', LUserFunctions.ListAll(Req.Query.Dictionary).ToJSONArray());
+    LSONObject.AddPair('Records',LUserFunctions.RecordCount);
+    Res.Send<TJSONObject>(LSONObject);
+  finally
+    LUserFunctions.Free;
+    LServiceUsuarios.Free;
+  end;
+end;
+
+procedure DoLisGetById(Req: THorseRequest; Res: THorseResponse);
+begin
+
+end;
+
+procedure DoAppend(Req: THorseRequest; Res: THorseResponse);
+begin
+
+
+end;
+
+procedure DoUpdate(Req: THorseRequest; Res: THorseResponse);
+begin
+
+end;
+
+procedure DoDelete(Req: THorseRequest; Res: THorseResponse);
+begin
+
+end;
+
+procedure RegistryRotas;
+begin
+   THorse.Get('/Tarefas', DoListAll);
+   THorse.Get('/Tarefas/:Id',DoLisGetById);
+   THorse.Post('/Tarefas',DoAppend);
+   THorse.Put('/Tarefas/:Id',DoUpdate);
+   THorse.Delete('/Tarefas/:Id',DoDelete);
+end;
+
+end.

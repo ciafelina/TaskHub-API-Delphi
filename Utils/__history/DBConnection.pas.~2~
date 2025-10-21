@@ -1,0 +1,46 @@
+unit DBConnection;
+
+interface
+
+uses
+  FireDAC.Comp.Client;
+
+procedure ConfigurarConexaoPeloINI(AConexao: TFDConnection);
+
+implementation
+
+uses
+  System.SysUtils, System.IniFiles;
+
+procedure ConfigurarConexaoPeloINI(AConexao: TFDConnection);
+var
+  LIniFile: TIniFile;
+  LPath: string;
+begin
+  // Garante que o caminho para o .ini seja o mesmo do executável
+  LPath := ExtractFilePath(ParamStr(0)) + 'config.ini';
+
+  if not FileExists(LPath) then
+    raise Exception.Create('Arquivo de configuração "config.ini" não encontrado.');
+
+  LIniFile := TIniFile.Create(LPath);
+  try
+    // Limpa os parâmetros antigos antes de carregar os novos
+    AConexao.Params.Clear;
+
+    // Carrega as configurações do arquivo .ini
+    AConexao.Params.Add('DriverID='      + LIniFile.ReadString('Database', 'DriverID', 'MSSQL'));
+    AConexao.Params.Add('Server='        + LIniFile.ReadString('Database', 'Server', ''));
+    AConexao.Params.Add('Database='      + LIniFile.ReadString('Database', 'Database', ''));
+    AConexao.Params.Add('User_Name='     + LIniFile.ReadString('Database', 'User_Name', ''));
+    AConexao.Params.Add('Password='      + LIniFile.ReadString('Database', 'Password', ''));
+    AConexao.Params.Add('CharacterSet='  + LIniFile.ReadString('Database', 'CharacterSet', 'UTF8'));
+
+    AConexao.LoginPrompt := False;
+
+  finally
+    LIniFile.Free;
+  end;
+end;
+
+end.

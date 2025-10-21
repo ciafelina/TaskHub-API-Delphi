@@ -1,0 +1,274 @@
+object FormBaseConnetion: TFormBaseConnetion
+  Height = 263
+  Width = 486
+  PixelsPerInch = 96
+  object Base: TFDConnection
+    Params.Strings = (
+      'User_Name=sa'
+      'Password=SenhaEbtTestes'
+      'Database=TotalControle_JoseThiago'
+      'Server=empresaconexao003.ddns.net'
+      'DriverID=MSSQL')
+    Connected = True
+    LoginPrompt = False
+    Left = 56
+    Top = 8
+  end
+  object MSSQLDriverLink: TFDPhysMSSQLDriverLink
+    Left = 16
+    Top = 8
+  end
+  object QryRecordCountUsuarios: TFDQuery
+    Connection = Base
+    SQL.Strings = (
+      'select COUNT(1) Contador from Usuarios')
+    Left = 320
+    Top = 104
+    object QryRecordCountUsuariosContador: TIntegerField
+      FieldName = 'Contador'
+      Origin = 'Contador'
+      ReadOnly = True
+    end
+  end
+  object QryCadastroUsuarios: TFDQuery
+    BeforePost = QryCadastroUsuariosBeforePost
+    Connection = Base
+    SQL.Strings = (
+      
+        'select id,nome,email,senha_hash, Status ,criado_em from Usuarios' +
+        ' ')
+    Left = 280
+    Top = 104
+    object QryCadastroUsuariosid: TFDAutoIncField
+      FieldName = 'id'
+      Origin = 'id'
+      ProviderFlags = [pfInWhere, pfInKey]
+      ReadOnly = True
+    end
+    object QryCadastroUsuariosnome: TStringField
+      FieldName = 'nome'
+      Origin = 'nome'
+      Required = True
+      Size = 100
+    end
+    object QryCadastroUsuariosemail: TStringField
+      FieldName = 'email'
+      Origin = 'email'
+      Required = True
+      Size = 100
+    end
+    object QryCadastroUsuariossenha_hash: TStringField
+      FieldName = 'senha_hash'
+      Origin = 'senha_hash'
+      Required = True
+      Size = 255
+    end
+    object QryCadastroUsuariosStatus: TStringField
+      FieldName = 'Status'
+      Origin = 'Status'
+      FixedChar = True
+      Size = 1
+    end
+    object QryCadastroUsuarioscriado_em: TSQLTimeStampField
+      FieldName = 'criado_em'
+      Origin = 'criado_em'
+      Required = True
+    end
+  end
+  object QryPesquisaUsuarios: TFDQuery
+    Connection = Base
+    SQL.Strings = (
+      'select * from Usuarios ')
+    Left = 240
+    Top = 104
+    object QryPesquisaUsuariosid: TFDAutoIncField
+      FieldName = 'id'
+      Origin = 'id'
+      ProviderFlags = [pfInWhere, pfInKey]
+      ReadOnly = True
+    end
+    object QryPesquisaUsuariosnome: TStringField
+      FieldName = 'nome'
+      Origin = 'nome'
+      Required = True
+      Size = 100
+    end
+    object QryPesquisaUsuariosemail: TStringField
+      FieldName = 'email'
+      Origin = 'email'
+      Required = True
+      Size = 100
+    end
+    object QryPesquisaUsuariossenha_hash: TStringField
+      FieldName = 'senha_hash'
+      Origin = 'senha_hash'
+      Required = True
+      Size = 255
+    end
+    object QryPesquisaUsuarioscriado_em: TSQLTimeStampField
+      FieldName = 'criado_em'
+      Origin = 'criado_em'
+      Required = True
+    end
+    object QryPesquisaUsuariosStatus: TStringField
+      FieldName = 'Status'
+      Origin = 'Status'
+      FixedChar = True
+      Size = 1
+    end
+  end
+  object QryUsuario: TFDQuery
+    Connection = Base
+    SQL.Strings = (
+      'select id,nome,email, Senha_hash, Status  from Usuarios'
+      'where Status = '#39'S'#39)
+    Left = 24
+    Top = 144
+    object QryUsuarioid: TFDAutoIncField
+      FieldName = 'id'
+      Origin = 'id'
+      ProviderFlags = [pfInWhere, pfInKey]
+      ReadOnly = True
+    end
+    object QryUsuarionome: TStringField
+      FieldName = 'nome'
+      Origin = 'nome'
+      Required = True
+      Size = 100
+    end
+    object QryUsuarioemail: TStringField
+      FieldName = 'email'
+      Origin = 'email'
+      Required = True
+      Size = 100
+    end
+    object QryUsuarioSenha_hash: TStringField
+      FieldName = 'Senha_hash'
+      Origin = 'Senha_hash'
+      Required = True
+      Size = 255
+    end
+    object QryUsuarioStatus: TStringField
+      FieldName = 'Status'
+      Origin = 'Status'
+      FixedChar = True
+      Size = 1
+    end
+  end
+  object QryRecordCountTarefas: TFDQuery
+    Connection = Base
+    SQL.Strings = (
+      'select COUNT(1) Contador from tarefas')
+    Left = 320
+    Top = 160
+    object QryRecordCountTarefasContador: TIntegerField
+      FieldName = 'Contador'
+      Origin = 'Contador'
+      ReadOnly = True
+    end
+  end
+  object QryCadastroTarefas: TFDQuery
+    AfterInsert = QryCadastroTarefasAfterInsert
+    AfterEdit = QryCadastroTarefasAfterEdit
+    Connection = Base
+    SQL.Strings = (
+      
+        'select id ,titulo, descricao, status, usuario_id, criado_em, atu' +
+        'alizado_em from tarefas')
+    Left = 280
+    Top = 160
+    object QryCadastroTarefastitulo: TStringField
+      FieldName = 'titulo'
+      Origin = 'titulo'
+      Required = True
+      Size = 150
+    end
+    object QryCadastroTarefasdescricao: TStringField
+      FieldName = 'descricao'
+      Origin = 'descricao'
+      Size = 500
+    end
+    object QryCadastroTarefasstatus: TStringField
+      FieldName = 'status'
+      Origin = 'status'
+    end
+    object QryCadastroTarefasusuario_id: TIntegerField
+      FieldName = 'usuario_id'
+      Origin = 'usuario_id'
+      Required = True
+    end
+    object QryCadastroTarefascriado_em: TSQLTimeStampField
+      FieldName = 'criado_em'
+      Origin = 'criado_em'
+      Required = True
+    end
+    object QryCadastroTarefasatualizado_em: TSQLTimeStampField
+      FieldName = 'atualizado_em'
+      Origin = 'atualizado_em'
+    end
+  end
+  object QryPesquisaTarefas: TFDQuery
+    Connection = Base
+    SQL.Strings = (
+      
+        'select T.id, T.titulo, T.descricao, T.status StatusTarefa, T.usu' +
+        'ario_id, U.nome, U.email, U.Status StatusUsuario, T.criado_em, T' +
+        '.atualizado_em from tarefas T'
+      'inner join Usuarios U on T.Usuario_id = U.id')
+    Left = 240
+    Top = 160
+    object QryPesquisaTarefasid: TFDAutoIncField
+      FieldName = 'id'
+      Origin = 'id'
+      ProviderFlags = [pfInWhere, pfInKey]
+      ReadOnly = True
+    end
+    object QryPesquisaTarefastitulo: TStringField
+      FieldName = 'titulo'
+      Origin = 'titulo'
+      Required = True
+      Size = 150
+    end
+    object QryPesquisaTarefasdescricao: TStringField
+      FieldName = 'descricao'
+      Origin = 'descricao'
+      Size = 500
+    end
+    object QryPesquisaTarefasStatusTarefa: TStringField
+      FieldName = 'StatusTarefa'
+      Origin = 'StatusTarefa'
+    end
+    object QryPesquisaTarefasusuario_id: TIntegerField
+      FieldName = 'usuario_id'
+      Origin = 'usuario_id'
+      Required = True
+    end
+    object QryPesquisaTarefasnome: TStringField
+      FieldName = 'nome'
+      Origin = 'nome'
+      Required = True
+      Size = 100
+    end
+    object QryPesquisaTarefasemail: TStringField
+      FieldName = 'email'
+      Origin = 'email'
+      Required = True
+      Size = 100
+    end
+    object QryPesquisaTarefasStatusUsuario: TStringField
+      FieldName = 'StatusUsuario'
+      Origin = 'StatusUsuario'
+      FixedChar = True
+      Size = 1
+    end
+    object QryPesquisaTarefascriado_em: TSQLTimeStampField
+      FieldName = 'criado_em'
+      Origin = 'criado_em'
+      Required = True
+    end
+    object QryPesquisaTarefasatualizado_em: TSQLTimeStampField
+      FieldName = 'atualizado_em'
+      Origin = 'atualizado_em'
+    end
+  end
+end

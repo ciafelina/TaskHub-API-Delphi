@@ -1,0 +1,84 @@
+unit TarefasFunctions;
+
+interface
+
+uses
+  System.SysUtils, System.Classes, System.JSON, Data.DB, BaseConnetion, DataSet.Serialize,
+  System.Generics.Collections, FireDAC.Comp.Client, FunctionsRotas;
+type
+  TCrudTarefas = class
+  private
+    FDataModule: TFormBaseConnetion;
+  public
+    constructor Create(ADataModule: TFormBaseConnetion);
+    function ListAll( const AQueryParams: TDictionary<string, string>  ): TDataSet;
+    function Append(const AValue: TJSONObject): Boolean;
+    function Update(const AValue: TJSONObject): Boolean;
+    function Delete: Boolean;
+    function GetById(const AId: Integer): TDataSet;
+    function GetByIduser(const AId: Integer): TDataSet;
+    function RecordCount: Int64;
+  end;
+
+implementation
+
+{ TCrudTarefas }
+
+function TCrudTarefas.Append(const AValue: TJSONObject): Boolean;
+begin
+  FDataModule.QryCadastroTarefas.SQL.Add('where id is null');
+  FDataModule.QryCadastroTarefas.Open;
+  FDataModule.QryCadastroTarefas.LoadFromJSON(AValue, false);
+  Result := True;
+end;
+
+constructor TCrudTarefas.Create(ADataModule: TFormBaseConnetion);
+begin
+  FDataModule := ADataModule;
+end;
+
+function TCrudTarefas.Delete: Boolean;
+begin
+  FDataModule.QryCadastroTarefas.Delete;
+  Result := True;
+end;
+
+function TCrudTarefas.GetById(const AId: Integer): TDataSet;
+begin
+  FDataModule.QryCadastroTarefas.SQL.Add(' Where id = :Id');
+  FDataModule.QryCadastroTarefas.ParamByName('Id').Value := AId;
+  FDataModule.QryCadastroTarefas.Open;
+  Result := FDataModule.QryCadastroTarefas;
+end;
+
+function TCrudTarefas.GetByIduser(const AId: Integer): TDataSet;
+begin
+  FDataModule.QryCadastroUsuarios.SQL.Add(' Where id = :Id and Status = ''S''');
+  FDataModule.QryCadastroUsuarios.ParamByName('Id').Value := AId;
+  FDataModule.QryCadastroUsuarios.Open;
+  Result := FDataModule.QryCadastroUsuarios;
+end;
+
+function TCrudTarefas.ListAll( const AQueryParams: TDictionary<string, string>): TDataSet;
+begin
+  Pagination(FDataModule.QryPesquisaTarefas, AQueryParams);
+  Ordenacao(FDataModule.QryPesquisaTarefas, AQueryParams);
+  AplicaFiltros(FDataModule.QryPesquisaTarefas, AQueryParams);
+
+  FDataModule.QryPesquisaTarefas.Open;
+  Result := FDataModule.QryPesquisaTarefas;
+end;
+
+function TCrudTarefas.RecordCount: Int64;
+begin
+  FDataModule.QryRecordCountTarefas.Open();
+  Result := FDataModule.QryRecordCountTarefasContador.AsInteger;
+end;
+
+function TCrudTarefas.Update(const AValue: TJSONObject): Boolean;
+begin
+  FDataModule.QryCadastroTarefas.MergeFromJSONObject(AValue, false);
+  Result := True;
+end;
+
+end.

@@ -1,0 +1,101 @@
+unit UsuariosController;
+
+interface
+
+procedure RegistryRotas;
+
+implementation
+
+uses horse, System.JSON, System.SysUtils, DataSet.Serialize, UsuariosFunctions, BaseConnetion;
+
+procedure DoListAll(Req: THorseRequest; Res: THorseResponse);
+begin
+  var LServiceUsuarios := TFormBaseConnetion.Create(nil);
+  var LUserFunctions   := TCrudUsuarios.Create(LServiceUsuarios);
+  try
+    var LSONObject := TJSONObject.Create;
+    LSONObject.AddPair('Usuarios', LUserFunctions.ListAll(Req.Query.Dictionary).ToJSONArray());
+    LSONObject.AddPair('Records',LUserFunctions.RecordCount);
+    Res.Send<TJSONObject>(LSONObject);
+  finally
+    LUserFunctions.Free;
+    LServiceUsuarios.Free;
+  end;
+end;
+
+procedure DoLisGetById(Req: THorseRequest; Res: THorseResponse);
+begin
+  {var LServiceProdutos := TDM_Rotas.Create(nil);
+  var TesteDataSet := TCrudService.Create(LServiceProdutos);
+  try
+    if TesteDataSet.GetById(Req.Params['id'].ToInt64).IsEmpty then
+      raise EHorseException.New.Status(THTTPStatus.NotFound).Error('Motivo de cancelamento não cadastrado');
+    Res.Send<TJSONObject>(LServiceProdutos.QryCadastro.ToJSONObject());
+
+  finally
+    LServiceProdutos.Free;
+    TesteDataSet.Free;
+  end;   }
+end;
+
+procedure DoAppend(Req: THorseRequest; Res: THorseResponse);
+var
+  LNome : string;
+begin
+  var LServiceUsuarios := TFormBaseConnetion.Create(nil);
+  var LUserFunctions   := TCrudUsuarios.Create(LServiceUsuarios);
+  try
+    if not Req.Body<TJSONObject>.TryGetValue<string>('MCDescricao',LNome) then
+      raise EHorseException.New.Status(THTTPStatus.BadRequest).Error('Informe o nome do Motivo de cancelamento');
+
+    if LUserFunctions.Append(Req.Body<TJSONObject>) then
+      Res.Status(THTTPStatus.Created).Send<TJSONObject>(LServiceUsuarios.QryCadastro.ToJSONObject());
+  finally
+    LServiceUsuarios.Free;
+    LUserFunctions.Free;
+  end;
+
+end;
+
+procedure DoUpdate(Req: THorseRequest; Res: THorseResponse);
+begin
+  {var LServiceProdutos := TDM_Rotas.Create(nil);
+  var TesteDataSet := TCrudService.Create(LServiceProdutos);
+  try
+    if TesteDataSet.GetById(Req.Params['id'].ToInt64).IsEmpty then
+      raise EHorseException.New.Status(THTTPStatus.NotFound).Error('Motivo de cancelamento não cadastrado');
+    if TesteDataSet.Update(req.Body<TJSONObject>) then
+      Res.Status(THTTPStatus.NoContent)
+
+  finally
+    LServiceProdutos.Free;
+    TesteDataSet.Free;
+  end; }
+end;
+
+procedure DoDelete(Req: THorseRequest; Res: THorseResponse);
+begin
+  {var LServiceProdutos := TDM_Rotas.Create(nil);
+  var TesteDataSet := TCrudService.Create(LServiceProdutos);
+  try
+    if TesteDataSet.GetById(Req.Params['id'].ToInt64).IsEmpty then
+      raise EHorseException.New.Status(THTTPStatus.NotFound).Error('Motivo de cancelamento não cadastrado');
+    if TesteDataSet.Delete then
+      Res.Status(THTTPStatus.NoContent)
+
+  finally
+    LServiceProdutos.Free;
+    TesteDataSet.Free;
+  end;}
+end;
+
+procedure RegistryRotas;
+begin
+   THorse.Get('/Usuarios',DoListAll);
+   THorse.Get('/Usuarios/:Id',DoLisGetById);
+   THorse.Post('/Usuarios',DoAppend);
+   THorse.Put('/Usuarios/:Id',DoUpdate);
+   THorse.Delete('/Usuarios/:Id',DoDelete);
+end;
+
+end.

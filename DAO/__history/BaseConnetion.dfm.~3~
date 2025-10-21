@@ -1,0 +1,16 @@
+object FormBaseConnetion: TFormBaseConnetion
+  Height = 207
+  Width = 402
+  PixelsPerInch = 96
+  object Base: TFDConnection
+    Params.Strings = (
+      'DriverID=MSSQL')
+    LoginPrompt = False
+    Left = 56
+    Top = 8
+  end
+  object MSSQLDriverLink: TFDPhysMSSQLDriverLink
+    Left = 16
+    Top = 8
+  end
+end
